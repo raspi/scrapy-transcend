@@ -286,8 +286,10 @@ class ManufacturerSpider(BaseSpider):
         mb = form.xpath(".//select[@name='ctl00$Content$Comp_Module']/option/@selected/../text()").get().strip()
 
         mb = mb.replace("Motherboard", "").strip()
-        mb = mb.replace("/", ",")
+        mb = mb.replace("motherboard", "").strip()
+        mb = mb.replace("/", " or ")
         mb = mb.replace(", ", ",")
+        mb = mb.replace(" ,", ",")
 
         #self.logger.info(f"MB:{mb} - Series:{series} - Brand:{brand} - Device:{device} - <URL: {response.url} >")
 
@@ -329,9 +331,20 @@ class ManufacturerSpider(BaseSpider):
             self.logger.info(f"No memory modules found for {mb}, skipping <URL: {response.url} >")
             return
 
-        yield Memory({
-            '_manufacturer': brand,
-            '_model': mb,
-            '_url': response.url,
-            'modules': modules,
-        })
+        if ',' in mb:
+            # Multiple motherboard models listed
+            for m in mb.split(","):
+                yield Memory({
+                    '_manufacturer': brand,
+                    '_model': m,
+                    '_url': response.url,
+                    'modules': modules,
+                })
+
+        else:
+            yield Memory({
+                '_manufacturer': brand,
+                '_model': mb,
+                '_url': response.url,
+                'modules': modules,
+            })
